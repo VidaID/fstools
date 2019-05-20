@@ -34,6 +34,7 @@ pthread_t thr[THREADS];
 extern void *thr_start();
 pthread_mutex_t mutex_start;
 pthread_cond_t cond_start;
+int failure_count;
 
 /* ------------------------------------------------------------------------- */
 /* ------------------------ commandline parameters ------------------------- */
@@ -562,6 +563,9 @@ const char		*root = random_root();
 
 	hadErr = 0;
 errorOccured:
+        if (hadErr) {
+            ++failure_count;
+        }
 	cmpfileFree(f, hadErr, 1);
 }
 
@@ -599,6 +603,9 @@ const char		*root = random_root();
 
         hadErr = 0;
 errorOccured:
+        if (hadErr) {
+            ++failure_count;
+        }
         cmpfileFree(f, hadErr, 0);
 }
 
@@ -653,6 +660,9 @@ btbool		hadErr = 1;
 	}
 	hadErr = 0;
 errorOccured:
+        if (hadErr) {
+            ++failure_count;
+        }
 	cmpdirFree(d);
 }
 
@@ -1027,8 +1037,9 @@ int	main(int argc, char **argv)
 
 	for(i=0;i<n;i++){ // n is the number of processes (argv[3])
 		if(fork() == 0){        /* we are the child */
+                        failure_count = 0;
 			testproc(i, 0, n);
-			exit(0);
+			exit(failure_count > 0 ? 1: 0);
 		}
 	}
 
@@ -1037,11 +1048,11 @@ int	main(int argc, char **argv)
 	XILogCloseLog(gLogRef);
 #endif /* XILOG */
 
-        // Wait for children to exit
+        // Parent: wait for children to exit
         int status;
         int result = 0;
         while (wait(&status) > 0) {
-            if (status != 0) {
+            if (WIFEXITED(status) && WEXITSTATUS(status) != 0) {
                 result = 1;
             }
         }

@@ -163,6 +163,7 @@ btbool	cmpfileClose(cmpfile_t *cmpfile)
 	fileClose(cmpfile->refFile);
 	if(close(cmpfile->fd) < 0){
 		perr(errno, "error closing file %s", cmpfile->name);
+                return 0;
 	}
 	cmpfile->isOpen = 0;
 	return 1;
