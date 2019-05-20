@@ -1025,20 +1025,28 @@ int	main(int argc, char **argv)
 	XIPing(0);
 #endif /* XILOG */
 
-	for(i=0;i<n-1;i++){ // n is the number of processes (argv[3])
+	for(i=0;i<n;i++){ // n is the number of processes (argv[3])
 		if(fork() == 0){        /* we are the child */
 			testproc(i, 0, n);
 			exit(0);
 		}
 	}
-	testproc(i, 1, n);            /* the last process is the parent */
 
 #ifdef XILOG
 	XILogEndTestCase(gLogRef, kXILogTestPassOnErrorLevel);
 	XILogCloseLog(gLogRef);
 #endif /* XILOG */
 
-	return 0;
+        // Wait for children to exit
+        int status;
+        int result = 0;
+        while (wait(&status) > 0) {
+            if (status != 0) {
+                result = 1;
+            }
+        }
+
+	return result;
 }
 
 /* ------------------------------------------------------------------------- */
